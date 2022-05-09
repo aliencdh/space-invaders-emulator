@@ -1,3 +1,5 @@
+#![feature(const_mut_refs)]
+
 #[macro_use] extern crate lazy_static;
 
 mod emulate;
@@ -43,8 +45,8 @@ pub struct State8080 {
     pub e: u8,
     pub h: u8,
     pub l: u8,
-    pub sp: u8,
-    pub pc: u8,
+    pub sp: u16,
+    pub pc: u16,
     pub memory: Vec<u8>,
     pub cc: ConditionCodes,
     pub int_enable: u8,
