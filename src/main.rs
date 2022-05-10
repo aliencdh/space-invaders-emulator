@@ -1,7 +1,5 @@
 #![feature(const_mut_refs)]
 
-#[macro_use] extern crate lazy_static;
-
 mod emulate;
 use emulate::*;
 
@@ -56,7 +54,20 @@ pub fn unimplemented_instruction(_state: &mut State8080) {
     panic!("Error: Unimplemented instruction.");
 } 
 
-pub fn parity(_: u8) -> u8 { todo!() }
+/// Returns 1 if the number is even, 0 if it's odd.
+pub fn parity(x: u8) -> u8 {
+    (x % 2 == 0) as u8
+}
+
+pub fn clamp<T: Ord>(given: T, min: T, max: T) -> T {
+    if given < min {
+        min
+    } else if given > max {
+        max
+    } else {
+        given
+    }
+}
 
 fn main() {
     println!("Hello, world!");
