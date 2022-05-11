@@ -58,6 +58,8 @@ const fn init_operations() -> [Operation; 256] {
 
     val[0x3f] = cmc;
 
+    val[0x76] = hlt;
+
     val[0x80] = add_b;
     val[0x81] = add_c;
     val[0x82] = add_d;
@@ -111,9 +113,17 @@ const fn init_operations() -> [Operation; 256] {
     val[0xb2] = ora_d;
     val[0xb3] = ora_e;
     val[0xb4] = ora_h;
-    val[0xb6] = ora_l;
-    val[0xb7] = ora_m;
-    val[0xb8] = ora_a;
+    val[0xb5] = ora_l;
+    val[0xb6] = ora_m;
+    val[0xb7] = ora_a;
+    val[0xb8] = cmp_b;
+    val[0xb9] = cmp_c;
+    val[0xba] = cmp_d;
+    val[0xbb] = cmp_e;
+    val[0xbc] = cmp_h;
+    val[0xbd] = cmp_l;
+    val[0xbe] = cmp_m;
+    val[0xbf] = cmp_a;
 
     val[0xc0] = rnz;
 
@@ -135,7 +145,7 @@ const fn init_operations() -> [Operation; 256] {
     val[0xd0] = rnc;
 
     val[0xd2] = jnc;
-
+    val[0xd3] = out;
     val[0xd4] = cnc;
 
     val[0xd6] = sui;
@@ -143,7 +153,7 @@ const fn init_operations() -> [Operation; 256] {
     val[0xd8] = rc;
 
     val[0xda] = jc;
-
+    val[0xdb] = in_8080;
     val[0xdc] = cc;
 
     val[0xde] = sbi;
@@ -168,7 +178,7 @@ const fn init_operations() -> [Operation; 256] {
     val[0xf0] = rp;
 
     val[0xf2] = jp;
-
+    val[0xf3] = di;
     val[0xf4] = cp;
 
     val[0xf6] = ori;
@@ -176,9 +186,10 @@ const fn init_operations() -> [Operation; 256] {
     val[0xf8] = rm;
 
     val[0xfa] = jm;
-
+    val[0xfb] = ei;
     val[0xfc] = cm;
 
+    val[0xfe] = cpi;
     val[0xff] = rst_7;
 
     val[0x41] = mov_b_c;
@@ -1481,5 +1492,97 @@ fn pchl(state: &mut State8080) {
     state.pc = (hi << 8) | lo;
 }
 
+/// Opcode 0xb8
+fn cmp_b(state: &mut State8080) {
+    let a = state.a;
+    sub_b(state);
+    state.a = a;
+}
+
+/// Opcode 0xb9
+fn cmp_c(state: &mut State8080) {
+    let a = state.a;
+    sub_c(state);
+    state.a = a;
+}
+
+/// Opcode 0xba
+fn cmp_d(state: &mut State8080) {
+    let a = state.a;
+    sub_d(state);
+    state.a = a;
+}
+
+
+/// Opcode 0xbb
+fn cmp_e(state: &mut State8080) {
+    let a = state.a;
+    sub_e(state);
+    state.a = a;
+}
+
+/// Opcode 0xbc
+fn cmp_h(state: &mut State8080) {
+    let a = state.a;
+    sub_h(state);
+    state.a = a;
+}
+
+/// Opcode 0xbd
+fn cmp_l(state: &mut State8080) {
+    let a = state.a;
+    sub_l(state);
+    state.a = a;
+}
+
+
+/// Opcode 0xbe
+fn cmp_m(state: &mut State8080) {
+    let a = state.a;
+    sub_m(state);
+    state.a = a;
+}
+
+
+/// Opcode 0xbf
+fn cmp_a(state: &mut State8080) {
+    let a = state.a;
+    sub_a(state);
+    state.a = a;
+}
+
+/// Opcode 0xfe
+fn cpi(state: &mut State8080) {
+    let a = state.a;
+    sbi(state);
+    state.a = a;
+}
+
+/// Opcode 0xfb
+fn ei(state: &mut State8080) {
+    state.interrupt_enabled = true;
+}
+
+/// Opcode 0xf3
+fn di(state: &mut State8080) {
+    state.interrupt_enabled = false;
+}
+
+/// Opcode 0xdb
+fn in_8080(state: &mut State8080) {
+    state.pc += 1;
+}
+
+/// Opcode 0xd3
+fn out(state: &mut State8080) {
+    state.pc += 1;
+}
+
 /// This function does nothing and is used as the NOP operation because Rust won't accept a closure.
 fn nop(_: &mut State8080) {}
+
+/// Opcode 0x76
+/// Exits the program.
+fn hlt(_: &mut State8080) {
+    panic!("HLT opcode encountered.");
+}

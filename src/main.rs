@@ -47,7 +47,8 @@ pub struct State8080 {
     pub pc: u16,
     pub memory: Vec<u8>,
     pub cc: ConditionCodes,
-    pub int_enable: u8,
+    pub int_enable: bool,
+    pub interrupt_enabled: bool
 }
 
 pub fn unimplemented_instruction(_state: &mut State8080) {
