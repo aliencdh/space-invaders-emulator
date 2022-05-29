@@ -2,7 +2,7 @@ use crate::*;
 
 pub type Operation = fn(&mut State8080) -> ();
 
-const fn init_operations() -> [Operation; 256] {
+pub const fn init_operations() -> [Operation; 256] {
     let mut val: [Operation; 256] = [unimplemented_instruction; 256];
 
     val[0x00] = nop;
@@ -126,9 +126,10 @@ const fn init_operations() -> [Operation; 256] {
     val[0xbf] = cmp_a;
 
     val[0xc0] = rnz;
-
+    val[0xc1] = pop_b;
     val[0xc2] = jnz;
 
+    val[0xc5] = push_b;
     val[0xc4] = cnz;
 
     val[0xc6] = adi;
@@ -143,11 +144,11 @@ const fn init_operations() -> [Operation; 256] {
     val[0xce] = aci;
     val[0xcf] = rst_1;
     val[0xd0] = rnc;
-
+    val[0xd1] = pop_d;
     val[0xd2] = jnc;
     val[0xd3] = out;
     val[0xd4] = cnc;
-
+    val[0xd5] = push_d;
     val[0xd6] = sui;
     val[0xd7] = rst_2;
     val[0xd8] = rc;
@@ -159,10 +160,11 @@ const fn init_operations() -> [Operation; 256] {
     val[0xde] = sbi;
     val[0xdf] = rst_3;
     val[0xe0] = rpo;
-
+    val[0xe1] = pop_h;
     val[0xe2] = jpo;
-
+    val[0xe3] = xthl;
     val[0xe4] = cpo;
+    val[0xe5] = push_h;
 
     val[0xe6] = ani;
     val[0xe7] = rst_4;
@@ -176,15 +178,15 @@ const fn init_operations() -> [Operation; 256] {
     val[0xee] = xri;
     val[0xef] = rst_5;
     val[0xf0] = rp;
-
+    val[0xf1] = pop_psw;
     val[0xf2] = jp;
     val[0xf3] = di;
     val[0xf4] = cp;
-
+    val[0xf5] = push_psw;
     val[0xf6] = ori;
     val[0xf7] = rst_6;
     val[0xf8] = rm;
-
+    val[0xf9] = sphl;
     val[0xfa] = jm;
     val[0xfb] = ei;
     val[0xfc] = cm;
@@ -1576,6 +1578,83 @@ fn in_8080(state: &mut State8080) {
 /// Opcode 0xd3
 fn out(state: &mut State8080) {
     state.pc += 1;
+}
+
+/// Opcode 0xc1
+fn pop_b(state: &mut State8080) {
+    state.b = state.memory[(state.sp + 1 ) as usize];
+    state.c = state.memory[state.sp as usize];
+    state.sp += 2;
+}
+
+/// Opcode 0xc5
+fn push_b(state: &mut State8080) {
+    state.memory[(state.sp - 1) as usize] = state.b;
+    state.memory[(state.sp - 2) as usize] = state.c;
+    state.sp -= 2;
+}
+
+/// Opcode 0xd1
+fn pop_d(state: &mut State8080) {
+    state.d = state.memory[(state.sp + 1 ) as usize];
+    state.e = state.memory[state.sp as usize];
+    state.sp += 2;
+}
+
+/// Opcode 0xd5
+fn push_d(state: &mut State8080) {
+    state.memory[(state.sp - 1) as usize] = state.d;
+    state.memory[(state.sp - 2) as usize] = state.e;
+    state.sp -= 2;
+}
+
+/// Opcode 0xe1
+fn pop_h(state: &mut State8080) {
+    state.h = state.memory[(state.sp + 1 ) as usize];
+    state.l = state.memory[state.sp as usize];
+    state.sp += 2;
+}
+
+/// Opcode 0xe5
+fn push_h(state: &mut State8080) {
+    state.memory[(state.sp - 1) as usize] = state.h;
+    state.memory[(state.sp - 2) as usize] = state.l;
+    state.sp -= 2;
+}
+
+/// Opcode 0xf1
+fn pop_psw(state: &mut State8080) {
+    state.a = state.memory[(state.sp + 1) as usize];
+    let psw = state.memory[state.sp as usize];
+    state.cc.z = (0x01 == (psw & 0x01)) as u8;
+    state.cc.s = (0x02 == (psw & 0x02)) as u8;
+    state.cc.p = (0x04 == (psw & 0x03)) as u8;
+    state.cc.cy = (0x05 == (psw & 0x05)) as u8;
+    state.cc.ac = (0x10 == (psw & 0x10)) as u8;
+    state.sp += 1;
+}
+
+/// Opcode 0xf5
+fn push_psw(state: &mut State8080) {
+    state.memory[(state.sp - 1) as usize] = state.a;
+    let psw = state.cc.z |
+        (state.cc.s << 1) |
+        (state.cc.p << 2) |
+        (state.cc.cy << 3) |
+        (state.cc.ac << 4);
+    state.memory[(state.sp - 2) as usize] = psw;
+    state.sp -= 2;
+}
+
+/// Opcode 0xf9
+fn sphl(state: &mut State8080) {
+    state.sp = ((state.l as u16) << 8) | (state.h as u16);
+}
+
+/// Opcode 0xe3
+fn xthl(state: &mut State8080) {
+    state.h = state.sp as u8;
+    state.l = (state.sp >> 8) as u8;
 }
 
 /// This function does nothing and is used as the NOP operation because Rust won't accept a closure.

@@ -1,4 +1,8 @@
 #![feature(const_mut_refs)]
+use std::fs::File;
+use std::path::Path;
+use std::io::BufReader;
+use std::io::Read;
 
 mod emulate;
 use emulate::*;
@@ -50,9 +54,28 @@ pub struct State8080 {
     pub int_enable: bool,
     pub interrupt_enabled: bool
 }
+impl State8080 {
+    pub fn new(buf: &[u8]) -> Self {
+        Self {
+            a: 0,
+            b: 0,
+            c: 0,
+            d: 0,
+            e: 0,
+            h: 0,
+            l: 0,
+            sp: 0,
+            pc: 0,
+            memory: Vec::from(buf),
+            cc: ConditionCodes::default(),
+            int_enable: false,
+            interrupt_enabled: false
+        }
+    }
+}
 
-pub fn unimplemented_instruction(_state: &mut State8080) {
-    panic!("Error: Unimplemented instruction.");
+pub fn unimplemented_instruction(state: &mut State8080) {
+    panic!("Error: Unimplemented instruction at byte {}", state.pc);
 } 
 
 /// Returns 1 if the number is even, 0 if it's odd.
@@ -70,7 +93,18 @@ pub fn clamp<T: Ord>(given: T, min: T, max: T) -> T {
     }
 }
 
-fn main() {
-    println!("Hello, world!");
+fn main() -> Result<(), String> {
+    let filename = String::from("space-invaders");
+    let file = File::open(&Path::new(&filename)).map_err(|err| format!("{:?}", err))?;
+    let mut reader = BufReader::new(file);
+
+    let mut buf = vec![];
+    reader.read_to_end(&mut buf).map_err(|err| format!("{:?}", err))?;
+
+    let mut state = State8080::new(reader.buffer());
+
+    loop {
+        emulate_8080_op(&mut state);
+    }
 }
 
